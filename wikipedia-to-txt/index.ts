@@ -1,51 +1,75 @@
-import axios from 'axios';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
+import fetch from 'node-fetch';
 import fs from 'fs';
-import * as cheerio from 'cheerio';
 
-const $ = cheerio.load(data);  // 使用 cheerio 解析 HTML
-const pageTitle = $('title').text();  // 例如，获取页面标题
-console.log(pageTitle);  // 打印页面标题，查看是否能正确解析
+interface Chapter {
+  title: string;
+  paragraphs: string[];
+}
 
-const url = 'https://en.wikipedia.org/wiki/Richard_Stallman';
+interface FetchResult {
+  Chapters: Chapter[];
+}
 
-async function fetchAndConvertToText() {
+async function fetchWikiPage(url: string): Promise<void> {
   try {
-    // 请求 Wikipedia 页面
-    const response = await axios.get(url);
+    // 获取页面内容
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch page, status: ${response.status}`);
+    }
+    const body = await response.text();
+    const $ = load(body);
 
-    // 打印响应的状态码
-    console.log('Response status:', response.status);
+    // 结果对象，包含章节内容
+    const result: FetchResult = { Chapters: [] };
 
-    // 获取返回的 HTML 数据
-    const data = response.data;
+    // 当前章节对象
+    let currentChapter: Chapter | null = null;
 
-    // 如果没有数据，抛出错误
-    if (!data) {
-      throw new Error('No data returned from the request');
+    // 获取所有 div.mw-heading 标签
+    $('div.mw-heading').each((index, element) => {
+      // 获取章节标题
+      const title = $(element).find('h2,h3').text().trim();
+      console.log(`Found title: ${title}`); // 调试输出
+
+      if (title) {
+        // 如果当前章节有内容，保存当前章节并开始新章节
+        if (currentChapter && currentChapter.paragraphs.length > 0) {
+          result.Chapters.push(currentChapter);
+        }
+
+        // 初始化新章节
+        currentChapter = { title, paragraphs: [] };
+      }
+
+      // 从当前 div.mw-heading 后面收集所有 p 标签内容
+      let nextElement = $(element).next(); // 获取下一个元素
+      while (nextElement.length && nextElement[0].name !== 'div') {
+        if (nextElement[0].name === 'p') {
+          nextElement.find('sup').remove();
+          const paragraphContent = nextElement.text().trim();
+          if (paragraphContent && paragraphContent.length > 20) {
+            currentChapter.paragraphs.push(paragraphContent);
+          }
+        }
+        nextElement = nextElement.next(); // 获取下一个元素
+      }
+    });
+
+    // 最后一章节添加
+    if (currentChapter && currentChapter.paragraphs.length > 10) {
+      result.Chapters.push(currentChapter);
     }
 
-    // 打印部分数据内容（前 1000 个字符）
-    console.log('Fetched data snippet:', data.substring(0, 1000));
-
-    // 使用 cheerio 加载 HTML 数据
-    const $ = cheerio.load(data);
-
-    // 提取页面的主要内容
-    const content = $('#mp-upper').nextAll().text();
-
-    if (!content) {
-      console.log('No content found.');
-      return;
-    }
-
-    // 将内容写入 .txt 文件
-    fs.writeFileSync('Richard_Stallman.txt', content);
-    console.log('Content has been saved to Richard_Stallman.txt');
+    // 保存 JSON 文件
+    fs.writeFileSync('Richard_Stallman_Chapters.txt', JSON.stringify(result, null, 2));
+    console.log('Page content saved to Richard_Stallman_Chapters.txt');
   } catch (error) {
-    console.error('Error fetching the page:', error);
+    console.error('Error fetching page:', error);
   }
 }
 
-fetchAndConvertToText();
+// 获取 Richard Stallman 页面
+fetchWikiPage('https://en.wikipedia.org/wiki/Richard_Stallman');
 
