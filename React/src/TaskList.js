@@ -27,14 +27,14 @@ function Task({task, onChange, onDelete}) {
             });
           }}
         />
-        <button onClick={() => setIsEditing(false)}>保存</button>
+        <button onClick={() => setIsEditing(false)}>save</button>
       </>
     );
   } else {
     taskContent = (
       <>
         {task.text}
-        <button onClick={() => setIsEditing(true)}>编辑</button>
+        <button onClick={() => setIsEditing(true)}>edit</button>
       </>
     );
   }
@@ -51,7 +51,7 @@ function Task({task, onChange, onDelete}) {
         }}
       />
       {taskContent}
-      <button onClick={() => onDelete(task.id)}>删除</button>
+      <button onClick={() => onDelete(task.id)}>delete</button>
     </label>
   );
 }

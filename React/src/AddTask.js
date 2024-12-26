@@ -5,7 +5,7 @@ export default function AddTask({onAddTask}) {
   return (
     <>
       <input
-        placeholder="添加任务"
+        placeholder="Add a task"
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
@@ -14,7 +14,7 @@ export default function AddTask({onAddTask}) {
           setText('');
           onAddTask(text);
         }}>
-        添加
+        Add
       </button>
     </>
   );
