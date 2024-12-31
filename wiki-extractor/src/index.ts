@@ -63,7 +63,7 @@ async function fetchWikiPage(url: string): Promise<void> {
     }
 
     // Saving the JSON file
-    fs.writeFileSync('data/Richard_Stallman_Chapters.txt', JSON.stringify(result, null, 2));
+    fs.writeFileSync('../data/Richard_Stallman_Chapters.txt', JSON.stringify(result, null, 2));
     console.log('Page content saved to Richard_Stallman_Chapters.txt');
   } catch (error) {
     console.error('Error fetching page:', error);
